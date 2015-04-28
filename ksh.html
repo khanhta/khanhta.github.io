@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div id="container">
+        <div class="row">
+            <div class="col-md-4">
+                <form class="form-inline">
+                    <div class="form-group">
+                        <p>
+                            <label for="directory-file">Directory file</label>
+                            <input type="file" id="directory-file"> </p>
+                        <div class="btn btn-default" id="directory-file-submit">Submit directory file</div>
+                    </div>
+                    <div class="form-group">
+                        <p>
+                            <label for="command-file">Command file</label>
+                            <input type="file" id="command-file"> </p>
+                        <div class="btn btn-default" id="command-file-submit">Submit command file (*.ksh)</div>
+                    </div>
+                </form>
+            </div>
+            <div id="directory-console" class="col-md-8 console">This is directory</div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="console" id="input-console"></div>
+            </div>
+            <div class="col-md-6">
+                <div class="console output" id="output-console">This is output</div>
+            </div>
+        </div>
+        <div class="row">
+            <label class="sr-only" for="command-line">Command line</label>
+            <div class="col-xs-6">
+                <input type="text" class="form-control" id="command-line" placeholder="Key in a command"> </div>
+            <div class="btn btn-default" id="command-line-submit">Submit</div>
+            <div class="btn btn-primary" id="run">Run</div>
+        </div>
+    </div>
+</body>
+<script src="https://code.jquery.com/jquery-git1.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+<script src="js/util.js"></script>
+<script src="js/parser.js"></script>
+<script src="js/filemanager.js"></script>
+<script src="js/view.js"></script>
+<script src="js/test.js"></script>
+<script>
+/** MINI JAVASCRIPT KORN SHELL INTERPRETER **/ 
+/** * Author: Sweet 
+	* History: 
+	* 14-Apr-2015: Initialized. Inspired by http://scratch-lang.notim...ratch-lang.html 
+	* 16-Apr-2015: variable resolution 
+	* 17-Apr-2015: flow control: if-then-else-fi 
+	* 20-Apr-2015: flow control: while-do-done 
+	*  until-do-done 
+	* 21-Apr-2015: flow control: for-do-done 
+	* 22-Apr-2015: flow control: refractor while-do and until-do, variable scope added, ++ -- fixed 
+	* 23-Apr-2015: function declaration and running - positional parameter, return, typeset 
+	* 24-Apr-2015: fix semicolon delimiter issue: no need space before and after semicolon. Refractor if-then-else 
+	* 26-Apr-2015: change delimiter to delimit into list then token 
+	* 27-Apr-2015: interactive UI - init 
+	* 28-Apr-2015: add color format to input console, ls init 
+	*/
+
+function DirectoryFileParser(content) {
+	var dirs = {};
+	var files = {};
+	this.parse = function() {
+		var files = content.split(/\n/);
+		for (var k = 0; k < files.length; k++) { 
+		/* drwxr-x---    2 root     audit           256 Apr 19 2013  audit */
+			var att = files[k].split(/\s+/);
+			var file = {};
+			file["permission"] = att[0];
+			file["id"] = att[1];
+			file["owner"] = att[2];
+			file["group"] = att[3];
+			file["size"] = att[4];
+			file["modify"] = {
+				"month": att[5],
+				"day": att[6],
+				"time": att[7]
+			};
+			file["name"] = att[8];
+			if (file.permission === "d") {
+				dirs[file.name] = file;
+			} else {
+				files[file.name] = file;
+			}
+		}
+	};
+}
+$(document).ready(function() {
+	if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
+		alert('The File APIs are not fully supported in this browser.');
+	}
+});
+$("#command-file-submit").on("click", function() {
+	TERP_VAR.filemanager.readFile(document.getElementById('command-file').files[0], TERP_VAR.commandConsole.setConsole);
+});
+$("#command-line-submit").on("click", function() {
+	var text = $("#command-line").val();
+	TERP_VAR.commandConsole.append(text + "\n");
+	if (TERP_VAR.commandFile) {
+		TERP_VAR.commandFile += text + "\n";
+	} else {
+		TERP_VAR.commandFile = text;
+	}
+	$("#command-line").val("");
+});
+$("#directory-file-submit").on("click", function() {
+	TERP_VAR.filemanager.readFile(document.getElementById('directory-file').files[0], TERP_VAR.directoryConsole.setConsole);
+});
+$("#run").on("click", function() {
+	TERP_VAR["parser"] = new Parser(TERP_VAR.displayer, TERP_VAR.keyWordDict);
+	TERP_VAR["test"] = new Test(TERP_VAR.displayer);
+	TERP_VAR["actionStack"] = [];
+	TERP_VAR.displayer.reset();
+	TERP_VAR.parser.run(TERP_VAR.commandFile);
+});
+
+var TERP_VAR = {};
+
+/********************************* MAIN ******************************************/
+TERP_VAR["displayer"] = new Displayer($("#output-console"));
+TERP_VAR["filemanager"] = new FileManager();
+TERP_VAR["keyWordDict"] = getKeyWordDict();
+TERP_VAR["colorDict"] = new ColorDict();
+TERP_VAR["commandConsole"] = new InputConsole($("#input-console"), "commandFile");
+TERP_VAR["directoryConsole"] = new InputConsole($("#directory-console"), "directoryFile");
+TERP_VAR["commandFile"] = "";
+TERP_VAR["directoryFile"] = ""; 
+</script>
+<html>
