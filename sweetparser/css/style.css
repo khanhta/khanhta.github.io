@@ -1,0 +1,20 @@
+.output {
+	color: blue;
+}
+
+.error {
+	color: red;
+}
+
+.console {
+	display: block;
+	background-color: black;
+	color: white;
+	min-height: 100px;
+	height: 100%: font-family: "Lucida Console", "Lucida Sans Typewriter", monaco, "Bitstream Vera Sans Mono", monospace;
+	overflow: auto;
+}
+
+.output {
+	background-color: white;
+}
